@@ -1,11 +1,12 @@
 import React, { useState, useEffect, use } from "react";
-import Wenb3Modal from "web3modal";
+import Web3Modal from "web3modal";
 import { ethers } from "ethers";
 
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contants";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contents";
 
+//FETCH CONTRACT FUNCTION
 const fetchContract = (signerOrProvider) => {
-  new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerOrProvider);
+  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerOrProvider);
 };
 
 export const CrowdFundingContext = React.createContext();
@@ -39,24 +40,28 @@ export const CrowdFundingProvider = ({ children }) => {
   };
 
   const getCampaigns = async () => {
-    const provider = new ethers.providers.JsonRpcProvider();
-    const contract = fetchContract(provider);
-
-    const campaigns = await contract.getCampaigns();
-
-    const parsedCampaigns = campaigns.map((campaign, i) => ({
-      owner: campaign.owner,
-      title: campaign.title,
-      description: campaign.description,
-      target: ethers.utils.formatEther(campaign.target.toString()),
-      deadline: campaign.deadline.toNumber(),
-      amountCollected: ethers.utils.formatEther(
-        campaign.amountCollected.toString()
-      ),
-      pId: i,
-    }));
-
-    return parsedCampaigns;
+    try {
+      const provider = new ethers.providers.JsonRpcProvider();
+      const contract = fetchContract(provider);
+      if (!contract || typeof contract.getCampaigns !== "function") {
+        throw new Error("Contract not loaded");
+      }
+      const campaigns = await contract.getCampaigns();
+      const parsedCampaigns = campaigns.map((campaign, i) => ({
+        owner: campaign.owner,
+        title: campaign.title,
+        description: campaign.description,
+        target: ethers.utils.formatEther(campaign.target.toString()),
+        deadline: campaign.deadline.toNumber(),
+        amountCollected: ethers.utils.formatEther(
+          campaign.amountCollected.toString()
+        ),
+        pId: i,
+      }));
+      return parsedCampaigns;
+    } catch (error) {
+      console.log("Error in getting campaigns", error);
+    }
   };
 
   const getUserCampaigns = async () => {
